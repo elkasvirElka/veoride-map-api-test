@@ -24,10 +24,7 @@ import com.elviraminnullina.map_api.navigation.NavigationArguments
 import com.elviraminnullina.map_api.navigation.NavigationEvent
 import com.elviraminnullina.map_api.save_state_factory.InjectingSavedStateViewModelFactory
 import com.elviraminnullina.map_api.utils.PermissionUtils
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapsInitializer
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.Polyline
@@ -158,14 +155,12 @@ class MapFragment : BaseFragment(),
             )
         location?.apply {
             mViewModel.setCurrentLocation(latitude, longitude)
-        }
-        /*
-         location?.let {
-             CameraUpdateFactory.newLatLngZoom(
-                 LatLng(location.latitude, location.longitude),
-                 13.toFloat()
+            googleMap.animateCamera(
+                 CameraUpdateFactory.newLatLngZoom(
+                 LatLng(latitude, longitude),
+                 13.toFloat())
              )
-         }*/
+         }
         mMap = googleMap
         mMap?.setOnMapLongClickListener(onMapLongClickListener())
         mViewModel.destinationMarkerOptions.value?.let {

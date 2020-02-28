@@ -16,14 +16,12 @@ import com.elviraminnullina.map_api.data.model.CoordinationDatabaseModel
 import com.elviraminnullina.map_api.navigation.NavigationArguments
 import com.elviraminnullina.map_api.save_state_factory.InjectingSavedStateViewModelFactory
 import com.elviraminnullina.map_api.ui.map.TRAVEL_TIME
-import com.google.android.gms.maps.GoogleMap
-import com.google.android.gms.maps.MapsInitializer
-import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PolylineOptions
 import java.util.*
 import javax.inject.Inject
+import kotlin.math.ln
 
 class TravelInformationFragment : BaseFragment(),
     OnMapReadyCallback {
@@ -44,7 +42,7 @@ class TravelInformationFragment : BaseFragment(),
         viewModel = ViewModelProvider(this, factory)[TravelInformationViewModel::class.java]
 
         val mapFragment =
-            childFragmentManager.findFragmentById(R.id.googleMap) as? SupportMapFragment
+            childFragmentManager.findFragmentById(R.id.travel_info_googleMap) as? SupportMapFragment
         mapFragment?.getMapAsync(this)
         //pass thru ViewModel by Activity
         NavigationArguments.create {
@@ -57,29 +55,28 @@ class TravelInformationFragment : BaseFragment(),
     }
 
     override fun onMapReady(googleMap: GoogleMap) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) !== PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
+
+        val db = MyApplication.getInstance()?.getDatabase()
+        val allCoordinates = db?.coordinationDataBase()?.getAll()
         MapsInitializer.initialize(Objects.requireNonNull(context));
         googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         googleMap.uiSettings.isZoomControlsEnabled = true
 
+        allCoordinates?.firstOrNull()?.apply {
+            mMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(
+                LatLng(lat, lng),
+                13.toFloat()
+            ))
+        }
+
         mMap = googleMap
-        val db = MyApplication.getInstance()?.getDatabase()
-        db?.coordinationDataBase()?.getAll()?.let {
+
+       allCoordinates?.let {
             displayDirection(it)
         }
     }
 
     private fun displayDirection(directionsList: List<CoordinationDatabaseModel>) {
-
-
-        val count = directionsList.size
         mMap?.apply {
             val options = PolylineOptions()
             options.color(Color.BLUE)

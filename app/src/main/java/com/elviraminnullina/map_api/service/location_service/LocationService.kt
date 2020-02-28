@@ -26,6 +26,7 @@ class LocationService : Service(), ConnectionCallbacks,
     private var currentlyProcessingLocation = false
     private var locationRequest: LocationRequest? = null
     private var googleApiClient: GoogleApiClient? = null
+    val db = MyApplication.getInstance()?.getDatabase()
     override fun onStartCommand(
         intent: Intent,
         flags: Int,
@@ -52,7 +53,6 @@ class LocationService : Service(), ConnectionCallbacks,
     }
 
     private fun sendLocationDataToDataBase(location: Location) {
-        val db = MyApplication.getInstance()?.getDatabase()
         with(CoordinationDatabaseModel()){
             lat = location.latitude
             lng = location.longitude
