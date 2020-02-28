@@ -1,3 +1,10 @@
 <resources>
-    <string name="app_name">map_api</string>
+    <string name="app_name">VeoRideTest</string>
+    <string name="wait">wait...</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="wanna_see_route_info">Do you want to see you route information?</string>
+    <string name="yes">yes</string>
+    <string name="no">no</string>
+    <string name="traveling_time">traveling time</string>
 </resources>
