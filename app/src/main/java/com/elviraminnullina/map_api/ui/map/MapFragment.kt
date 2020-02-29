@@ -1,6 +1,10 @@
 package com.elviraminnullina.map_api.ui.map
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Criteria
@@ -15,6 +19,7 @@ import android.widget.Chronometer
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.elviraminnullina.map_api.BaseFragment
 import com.elviraminnullina.map_api.MainActivity
 import com.elviraminnullina.map_api.MyApplication
@@ -33,6 +38,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.maps.android.PolyUtil
 import java.util.*
 import javax.inject.Inject
+import kotlin.collections.ArrayList
+import kotlin.math.absoluteValue
 
 const val TRAVEL_TIME = "TRAVEL_TIME"
 
@@ -50,11 +57,6 @@ class MapFragment : BaseFragment(),
 
     //TODO move to VM
     private var mLastLocation: Location = Location("")
-
-
-    //TODO move to viewModel
-    @Volatile
-    var polylines: ArrayList<Polyline> = ArrayList()
 
     override val layoutResourceId: Int = R.layout.fragment_map
 
@@ -80,7 +82,7 @@ class MapFragment : BaseFragment(),
 
 
 
-        if (mViewModel.chronoProgress.value == true) {
+        if (mViewModel.travelProcess.value == true) {
             startChronometer()
         }
 
@@ -156,11 +158,12 @@ class MapFragment : BaseFragment(),
         location?.apply {
             mViewModel.setCurrentLocation(latitude, longitude)
             googleMap.animateCamera(
-                 CameraUpdateFactory.newLatLngZoom(
-                 LatLng(latitude, longitude),
-                 13.toFloat())
-             )
-         }
+                CameraUpdateFactory.newLatLngZoom(
+                    LatLng(latitude, longitude),
+                    13.toFloat()
+                )
+            )
+        }
         mMap = googleMap
         mMap?.setOnMapLongClickListener(onMapLongClickListener())
         mViewModel.destinationMarkerOptions.value?.let {
@@ -168,21 +171,29 @@ class MapFragment : BaseFragment(),
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        if (::mViewModel.isInitialized && mViewModel.travelProcess.value == true)
+            mViewModel.setChronoTime(mChronometer.base.absoluteValue)
+    }
+
     private fun displayDirection(directionsList: ArrayList<StepModel>) {
-
-        for (item in polylines) {
-            item.remove()
+        mViewModel.polylines.value?.apply {
+            removeAll(this)
+            clear()
         }
-        polylines.clear()
+        /*    for (item in mViewModel.polylines.value?: emptyList<Polyline>()) {
+                item.remove()
+            }
+            polylines.clear()*/
 
-        val count = directionsList.size
         mMap?.apply {
             directionsList.forEach { it ->
                 val options = PolylineOptions()
                 options.color(Color.BLUE)
                 options.width(10F)
                 options.addAll(PolyUtil.decode(it.polyline.points))
-                polylines.add(addPolyline(options))
+                mViewModel.polylines.value?.add(addPolyline(options))
             }
         }
     }
@@ -204,21 +215,22 @@ class MapFragment : BaseFragment(),
     }
 
     private fun stopTraveling() = View.OnClickListener {
-        mViewModel.chronoProgress.value = false
-        mViewModel.setTravelTime(mChronometer.base)
+        mViewModel.travelProcess.value = false
         mViewModel.setChronoTimeToNull()
         mChronometer.stop()
+        mViewModel.setTravelTime(mChronometer.base)
+        (activity as? MainActivity)?.stopService()
+        val arg = NavigationArguments.create {
+            putString(TRAVEL_TIME, getTimeFromChrono())
+        }
 
+        getDialog(arg)
+    }
 
+    private fun getDialog(arg: NavigationArguments) {
         MaterialAlertDialogBuilder(context)
             .setTitle(getString(R.string.wanna_see_route_info))
             .setPositiveButton(getString(R.string.yes)) { _, _ ->
-                val arg = NavigationArguments.create {
-                    (activity as? MainActivity)?.stopService()
-                    mViewModel.travelTime.value?.let {
-                        putLong(TRAVEL_TIME, it)
-                    }
-                }
                 navigate(NavigationEvent(R.id.map_fragment_to_travel_info_fragment, arg))
             }.setNegativeButton(getString(R.string.no)) { _, _ ->
                 val db = MyApplication.getInstance()?.getDatabase()
@@ -228,16 +240,84 @@ class MapFragment : BaseFragment(),
     }
 
     private fun startChronometer() {
-        mViewModel.chronoProgress.value = true
+        mViewModel.travelProcess.value = true
         mViewModel.setTravelTimeToNull()
         mChronometer.base = mViewModel.chronoTime.value ?: SystemClock.elapsedRealtime()
         mChronometer.start()
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        mViewModel.setChronoTime(mChronometer.base)
+    private val mMessageReceiver = object : BroadcastReceiver() {
+        override fun onReceive(contxt: Context?, intent: Intent?) {
+            if (mViewModel.travelProcess.value == false)
+                return
+            val b = intent?.getBundleExtra("Location");
+            val lastKnownLoc = b?.getParcelable("Location") as? Location
+
+            lastKnownLoc?.let { lastLct ->
+                mViewModel.polylines.value?.firstOrNull()?.let { x ->
+                    var i = 0
+                    var itemFound = false
+                    x.points.forEach { coor ->
+                        //maybe here should be better to search for first 5 digits
+                        if (coor.latitude == lastLct.latitude && coor.longitude == lastLct.longitude) {
+                            itemFound = true
+                            return@forEach
+                        }
+                        i++
+                    }
+                    if(itemFound){
+                        //val newPoints = ArrayList<LatLng>(x.points.subList(i, x.points.size -1))
+                        //mViewModel.polylines.value?.removeAt(0)
+                        for(item in 0 until i)
+                                x.points.removeAt(item)
+
+                      /*  val option = PolylineOptions()
+                        option.addAll(newPoints)*/
+                      /*  mViewModel.polylines.value?.add(0, option.)*/
+                    }
+                }
+            }
+            //(PolyUtil.decode(firstOrNull() ?: ""))
+            // }
+
+            // Get extra data included in the Intent
+            /*String message = intent.getStringExtra("Status");
+            Bundle b = intent.getBundleExtra("Location");
+            lastKnownLoc = (Location) b.getParcelable("Location");
+            if (lastKnownLoc != null) {
+                tvLatitude.setText(String.valueOf(lastKnownLoc.getLatitude()));
+                tvLongitude
+                        .setText(String.valueOf(lastKnownLoc.getLongitude()));
+                tvAccuracy.setText(String.valueOf(lastKnownLoc.getAccuracy()));
+                tvTimestamp.setText((new Date(lastKnownLoc.getTime())
+                        .toString()));
+                tvProvider.setText(lastKnownLoc.getProvider());
+            }
+            tvStatus.setText(message);*/
+            // Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+        }
     }
+
+
+    private fun startTravel() {
+        LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
+            mMessageReceiver, IntentFilter("GPSLocationUpdates")
+        )
+    }
+
+
+    private fun getTimeFromChrono(): String {
+        val time = SystemClock.elapsedRealtime() - mChronometer.base;
+        val h = (time / 3600000).toInt()
+        val m = (time - h * 3600000).toInt() / 60000;
+        val s = (time - h * 3600000 - m * 60000).toInt() / 1000;
+        return addZeroIfLessThenTen(h).plus(":")
+            .plus(addZeroIfLessThenTen(m)).plus(":")
+            .plus(addZeroIfLessThenTen(s))
+    }
+
+    private fun addZeroIfLessThenTen(number: Int) =
+        (if (number < 10) "0$number" else number.toString())
 
     companion object {
         const val MY_PERMISSIONS_REQUEST_LOCATION = 99

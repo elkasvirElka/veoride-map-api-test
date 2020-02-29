@@ -30,8 +30,8 @@
             android:layout_marginTop="@dimen/spacing_sm"
             android:text="@string/traveling_time"/>
 
-        <Chronometer
-            android:id="@+id/travel_info_chronometer"
+        <TextView
+            android:id="@+id/travel_info_time"
             style="@style/section_header.Black"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

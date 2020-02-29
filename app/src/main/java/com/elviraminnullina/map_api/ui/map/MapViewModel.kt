@@ -1,6 +1,7 @@
 package com.elviraminnullina.map_api.ui.map
 
 import android.location.Location
+import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.*
 import com.elviraminnullina.map_api.data.model.CoordinationModel
@@ -10,9 +11,11 @@ import com.elviraminnullina.map_api.save_state_factory.AssistedSavedStateViewMod
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.Polyline
 import com.squareup.inject.assisted.Assisted
 import com.squareup.inject.assisted.AssistedInject
 import kotlinx.coroutines.launch
+import java.util.ArrayList
 
 class MapViewModel @AssistedInject constructor(
     private val repository: MapRepository,
@@ -67,7 +70,7 @@ class MapViewModel @AssistedInject constructor(
         _destinationMarkerOptions.value = getMarker(latLng)
     }
 
-    val chronoProgress =
+    val travelProcess =
         savedStateHandle.getLiveData<Boolean>("chronoProgress", false)
 
     private val _chronoTime =
@@ -93,6 +96,9 @@ class MapViewModel @AssistedInject constructor(
     fun setTravelTime(time: Long) {
         _travelTime.value = time
     }
+    //TODO check if not needed
+    @Volatile
+    var polylines =   savedStateHandle.getLiveData<ArrayList<Polyline>>("polylines", ArrayList())
 
     fun getDirection(mode: String = "bicycling") {
         if (_currentLocation.value == null || _destinationLocation.value == null) {
