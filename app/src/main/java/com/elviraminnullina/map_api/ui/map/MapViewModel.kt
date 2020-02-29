@@ -81,25 +81,13 @@ class MapViewModel @AssistedInject constructor(
         _chronoTime.value = time
     }
 
-    private val _travelTime =
-        savedStateHandle.getLiveData<Long>("travelTime", null)
-    val travelTime: LiveData<Long> = _travelTime
-
-    fun setTravelTimeToNull() {
-        _travelTime.value = null
-    }
-
-    fun setTravelTime(time: Long) {
-        _travelTime.value = time
-    }
-
     //TODO check if not needed
    // @Volatile
-    var polylines = savedStateHandle.getLiveData<ArrayList<Polyline>>("polylines", ArrayList())
+    var polylines = savedStateHandle.get<ArrayList<Polyline>>("polylines")?:ArrayList()
 
     fun removePolylines(){
-        polylines.value?.forEach { x -> x.remove() }
-        polylines.value?.clear()
+        polylines.forEach { x -> x.remove() }
+        polylines.clear()
     }
 
     private fun getDirection(mode: String = "bicycling") {

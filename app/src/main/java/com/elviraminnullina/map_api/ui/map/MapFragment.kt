@@ -193,7 +193,7 @@ class MapFragment : BaseFragment(),
 
     private fun displayDirection(directionsList: ArrayList<StepModel>) {
         updateNavPath(getCurrentPath())
-        (mViewModel.polylines.value?.size ?: 0 > 0).run {
+        (mViewModel.polylines.size ?: 0 > 0).run {
             mViewModel.removePolylines()
         }
 
@@ -203,7 +203,7 @@ class MapFragment : BaseFragment(),
                 options.color(Color.BLUE)
                 options.width(10F)
                 options.addAll(PolyUtil.decode(it.polyline.points))
-                mViewModel.polylines.value?.add(addPolyline(options))
+                mViewModel.polylines.add(addPolyline(options))
             }
         }
     }
@@ -228,7 +228,7 @@ class MapFragment : BaseFragment(),
     private fun getCurrentPath(): Spanned? {
         mViewModel.response.value?.routes?.firstOrNull()?.legs?.firstOrNull()
             ?.steps?.forEach { step ->
-            if (PolyUtil.decode(step.polyline.points).lastOrNull() == mViewModel.polylines.value?.firstOrNull()?.points?.lastOrNull())
+            if (PolyUtil.decode(step.polyline.points).lastOrNull() == mViewModel.polylines.firstOrNull()?.points?.lastOrNull())
                 return HtmlCompat.fromHtml(step.html_instructions, HtmlCompat.FROM_HTML_MODE_LEGACY)
         }
         return null
@@ -246,7 +246,6 @@ class MapFragment : BaseFragment(),
         mViewModel.travelProcess = false
         mViewModel.setChronoTimeToNull()
         mChronometer.stop()
-        mViewModel.setTravelTime(mChronometer.base)
         (activity as? MainActivity)?.stopService()
 
         val arg = NavigationArguments.create {
@@ -270,7 +269,6 @@ class MapFragment : BaseFragment(),
 
     private fun startChronometer() {
         mViewModel.travelProcess = true
-        mViewModel.setTravelTimeToNull()
         mChronometer.base = mViewModel.chronoTime.value ?: SystemClock.elapsedRealtime()
         mChronometer.start()
     }
