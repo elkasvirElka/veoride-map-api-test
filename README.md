@@ -28,6 +28,9 @@
  [video is here](https://youtu.be/Q8PEguO1h00)
  
  ## To make it works 
- To start this app you need to create keys.properties file in your root app directory and put API_KEY inside this file You can get your own API_KEY [here](https://cloud.google.com/maps-platform/)
+ - To start this app you need to create keys.properties file in your root app directory and put API_KEY inside this file You can get your own API_KEY [here](https://cloud.google.com/maps-platform/)
 
 example: api_key = "YOUR_API_KEY"
+
+ - AND add to gradle.properties file API_KEY 
+example:API_KEY = YOUR_API_KEY
