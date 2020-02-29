@@ -49,6 +49,21 @@ class MapViewModel @AssistedInject constructor(
         _currentLocation.value = CoordinationModel(latitude, longitude)
     }
 
+    fun setCurrentLocationAndUpdateDirection(latitude: Double, longitude: Double) {
+        _currentLocation.value = CoordinationModel(latitude, longitude)
+        getDirection()
+    }
+
+    fun setCurrentLocationAndUpdateDirection(location: Location) {
+        _currentLocation.value = CoordinationModel(location.latitude, location.longitude)
+        getDirection()
+    }
+
+    fun setDestinationAndUpdateDirection(latitude: Double = 0.0, longitude: Double = 0.0) {
+        _destinationLocation.value = CoordinationModel(latitude, longitude)
+        setDestinationMarkerOptions(LatLng(latitude, longitude))
+        getDirection()
+    }
     private val _destinationLocation =
         savedStateHandle.getLiveData<CoordinationModel>("destination", null)
     val destinationLocation: LiveData<CoordinationModel> = _destinationLocation

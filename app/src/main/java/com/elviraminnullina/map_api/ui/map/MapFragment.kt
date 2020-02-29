@@ -44,7 +44,6 @@ import java.util.*
 import javax.inject.Inject
 import kotlin.math.absoluteValue
 
-
 @Suppress("DEPRECATED_IDENTITY_EQUALS")
 class MapFragment : BaseFragment(),
     OnMapReadyCallback {
@@ -58,7 +57,7 @@ class MapFragment : BaseFragment(),
     private var mMap: GoogleMap? = null
 
     private val mMessageReceiver = object : BroadcastReceiver() {
-        override fun onReceive(contxt: Context?, intent: Intent?) {
+        override fun onReceive(context: Context?, intent: Intent?) {
             if (mViewModel.travelProcess.value == false)
                 return
             val b = intent?.getBundleExtra(LOCATION)
@@ -73,7 +72,7 @@ class MapFragment : BaseFragment(),
                 ) {
                     stopTraveling()
                 } else {
-                    mViewModel.setCurrentLocation(lastLct)
+                    mViewModel.setCurrentLocationAndUpdateDirection(lastLct)
                 }
             }
         }
@@ -129,7 +128,7 @@ class MapFragment : BaseFragment(),
 
         val location = getLocation()
         location?.apply {
-            mViewModel.setCurrentLocation(latitude, longitude)
+            mViewModel.setCurrentLocationAndUpdateDirection(latitude, longitude)
             googleMap.animateCamera(
                 CameraUpdateFactory.newLatLngZoom(
                     LatLng(latitude, longitude),
@@ -167,19 +166,6 @@ class MapFragment : BaseFragment(),
 
     private fun setViewModelObservers() {
         mViewModel.apply {
-            currentLocation.observe(viewLifecycleOwner, Observer {
-                it?.let {
-                    getDirection()
-                }
-            })
-
-            destinationLocation.observe(viewLifecycleOwner, Observer {
-                it?.let {
-                    getDirection()
-                    val latLng = LatLng(it.latitude, it.longitude)
-                    setDestinationMarkerOptions(latLng)
-                }
-            })
             destinationMarkerOptions.observe(viewLifecycleOwner, Observer {
                 it?.let {
                     destinationMarker = mMap?.addMarker(it)
@@ -231,7 +217,7 @@ class MapFragment : BaseFragment(),
             destinationMarker?.apply {
                 remove()
             }
-            mViewModel.setDestinationLocation(item.latitude, item.longitude)
+            mViewModel.setDestinationAndUpdateDirection(item.latitude, item.longitude)
         }
 
     private fun onStartClickListener() = View.OnClickListener {
