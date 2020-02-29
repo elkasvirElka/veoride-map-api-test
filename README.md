@@ -1,6 +1,6 @@
-## Interview coding task
+# Interview coding task
 ## Summary
-# In this app you can do following things:
+## In this app you can do following things:
 - Open the map
 - Choose destination, app will show your location (after you will give permission)
 - Start you trip and see traveling path
@@ -26,3 +26,8 @@
  ## The video of app flow
  
  [video is here](https://youtu.be/Q8PEguO1h00)
+ 
+ ## To make it works 
+ To start this app you need to create keys.properties file in your root app directory and put API_KEY inside this file You can get your own API_KEY [here](https://cloud.google.com/maps-platform/)
+
+example: api_key = "YOUR_API_KEY"
