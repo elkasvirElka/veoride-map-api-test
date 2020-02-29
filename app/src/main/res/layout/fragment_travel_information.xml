@@ -28,10 +28,19 @@
             style="@style/section_header.Black"
             android:gravity="center"
             android:layout_marginTop="@dimen/spacing_sm"
-            android:text="@string/traveling_time"/>
+            android:text="@string/traveling_info"/>
 
         <TextView
             android:id="@+id/travel_info_time"
+            style="@style/section_header.Black"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:layout_marginBottom="@dimen/spacing_sm"
+            android:gravity="center"/>
+
+        <TextView
+            android:id="@+id/travel_info_distance"
             style="@style/section_header.Black"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

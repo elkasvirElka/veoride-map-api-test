@@ -1,11 +1,10 @@
 package com.elviraminnullina.map_api.ui.map
 
 import android.location.Location
-import android.os.SystemClock
 import android.util.Log
 import androidx.lifecycle.*
 import com.elviraminnullina.map_api.data.model.CoordinationModel
-import com.elviraminnullina.map_api.data.model.DirectionResponce
+import com.elviraminnullina.map_api.data.model.DirectionResponse
 import com.elviraminnullina.map_api.data.repository.MapRepository
 import com.elviraminnullina.map_api.save_state_factory.AssistedSavedStateViewModelFactory
 import com.google.android.gms.maps.model.LatLng
@@ -15,7 +14,7 @@ import com.google.android.gms.maps.model.Polyline
 import com.squareup.inject.assisted.Assisted
 import com.squareup.inject.assisted.AssistedInject
 import kotlinx.coroutines.launch
-import java.util.ArrayList
+import java.util.*
 
 class MapViewModel @AssistedInject constructor(
     private val repository: MapRepository,
@@ -32,10 +31,10 @@ class MapViewModel @AssistedInject constructor(
     private val _showSpinner = MutableLiveData(false)
     val showSpinner: LiveData<Boolean> = _showSpinner
 
-    private val responseStateHandle = savedStateHandle.getLiveData<DirectionResponce>(
+    private val responseStateHandle = savedStateHandle.getLiveData<DirectionResponse>(
         "response", null
     )
-    val response: LiveData<DirectionResponce> = responseStateHandle
+    val response: LiveData<DirectionResponse> = responseStateHandle
 
     private val _currentLocation =
         savedStateHandle.getLiveData<CoordinationModel>("current_location", null)
@@ -96,9 +95,10 @@ class MapViewModel @AssistedInject constructor(
     fun setTravelTime(time: Long) {
         _travelTime.value = time
     }
+
     //TODO check if not needed
     @Volatile
-    var polylines =   savedStateHandle.getLiveData<ArrayList<Polyline>>("polylines", ArrayList())
+    var polylines = savedStateHandle.getLiveData<ArrayList<Polyline>>("polylines", ArrayList())
 
     fun getDirection(mode: String = "bicycling") {
         if (_currentLocation.value == null || _destinationLocation.value == null) {
@@ -120,5 +120,5 @@ class MapViewModel @AssistedInject constructor(
         }
     }
 
-    fun getMarker(latLng: LatLng) = MarkerOptions().position(latLng).draggable(true)
+    private fun getMarker(latLng: LatLng) = MarkerOptions().position(latLng).draggable(true)
 }

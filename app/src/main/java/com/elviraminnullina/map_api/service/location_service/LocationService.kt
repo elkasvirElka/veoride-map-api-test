@@ -17,17 +17,13 @@ import com.google.android.gms.location.LocationListener
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 
-//TODO rewrite on work managers if you want to keep it wotk always
-//import com.google.android.gms.common.GooglePlayServicesUtil;
+//TODO rewrite on work managers if you want to keep it work always
 class LocationService : Service(), ConnectionCallbacks,
     OnConnectionFailedListener, LocationListener {
-    // use the websmithing defaultUploadWebsite for testing and then check your
-// location with your browser here: https://www.websmithing.com/gpstracker/displaymap.php
-    private var defaultUploadWebsite: String? = null
     private var currentlyProcessingLocation = false
     private var locationRequest: LocationRequest? = null
     private var googleApiClient: GoogleApiClient? = null
-    val db = MyApplication.getInstance()?.getDatabase()
+    private val db = MyApplication.getInstance()?.getDatabase()
     override fun onStartCommand(
         intent: Intent,
         flags: Int,
@@ -59,7 +55,6 @@ class LocationService : Service(), ConnectionCallbacks,
             lng = location.longitude
             db?.coordinationDataBase()?.insert(this)
         }
-
     }
 
     override fun onBind(intent: Intent): IBinder? {
@@ -71,19 +66,22 @@ class LocationService : Service(), ConnectionCallbacks,
             TAG,
             "position: " + location.latitude + ", " + location.longitude + " accuracy: " + location.accuracy
         )
-        // we have our desired accuracy of 10 meters so lets quit this service,
-// onDestroy will be called and stop our location updates
-        if (location.accuracy < 10.0f) {
-            // stopLocationUpdates()
-        } else {
+        // we have our desired accuracy of 10 meters so lets update database and client
+        if (location.accuracy > 10.0f) {
             sendLocationDataToDataBase(location)
             sendMessageToActivity(location)
         }
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        stopSelf()
+        stopLocationUpdates()
+    }
+
     private fun stopLocationUpdates() {
         if (googleApiClient != null && googleApiClient?.isConnected == true) {
-            googleApiClient!!.disconnect()
+            googleApiClient?.disconnect()
         }
     }
 

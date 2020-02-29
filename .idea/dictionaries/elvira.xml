@@ -2,6 +2,8 @@
   <dictionary name="elvira">
     <words>
       <w>chrono</w>
+      <w>geocoded</w>
+      <w>waypoints</w>
     </words>
   </dictionary>
 </component>

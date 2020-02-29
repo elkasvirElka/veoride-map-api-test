@@ -5,6 +5,6 @@ import kotlinx.android.parcel.Parcelize
 
 @Parcelize
 data class CoordinationModel(
-    val lat: Double = 0.0,
-    val lng: Double = 0.0
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
 ):Parcelable

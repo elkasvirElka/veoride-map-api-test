@@ -7,10 +7,7 @@ import kotlinx.android.parcel.Parcelize
 data class RouteModel(
     val bounds: BoundsModel,
     val copyrights: String,
-    val legs: ArrayList<RoutInformationModel>,
+    val legs: ArrayList<RouteInformationModel>,
     val overview_polyline: PolylineModel,
     val summary: String
-    // "warnings": [],
-//"waypoint_order": [],
-
 ): Parcelable

@@ -8,7 +8,7 @@ data class StepModel(
     val distance: TextValueModel,
     val duration: TextValueModel,
     val end_location: CoordinationModel,
-    val html_instruction: String,
+    val html_instructions: String,
     val polyline: PolylineModel,
     val start_location: CoordinationModel,
     val travel_mode: String

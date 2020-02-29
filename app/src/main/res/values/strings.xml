@@ -7,4 +7,6 @@
     <string name="yes">yes</string>
     <string name="no">no</string>
     <string name="traveling_time">traveling time</string>
+    <string name="route_information">Route information</string>
+    <string name="traveling_info">travel information</string>
 </resources>

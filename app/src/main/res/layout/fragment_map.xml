@@ -12,6 +12,28 @@
         android:layout_height="match_parent"
         tools:context=".ui.map.MapFragment" />
 
+    <androidx.appcompat.widget.LinearLayoutCompat
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_lg"
+        android:background="@color/white"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:id="@+id/navigation_path"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            style="@style/section_header.Black"
+            android:gravity="center"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:layout_marginBottom="@dimen/spacing_sm"
+            android:text="@string/route_information"/>
+
+    </androidx.appcompat.widget.LinearLayoutCompat>
+
     <Chronometer
         android:id="@+id/chronometer"
         android:layout_width="wrap_content"

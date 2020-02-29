@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
-data class RoutInformationModel(
+data class RouteInformationModel(
     val distance: TextValueModel,
     val duration: TextValueModel,
     val end_address: String,
@@ -12,6 +12,4 @@ data class RoutInformationModel(
     val start_address: String,
     val start_location: CoordinationModel,
     val steps: ArrayList<StepModel>
-//traffic_speed_entry
-//via_waypoint
 ) : Parcelable

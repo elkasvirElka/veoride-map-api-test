@@ -9,5 +9,4 @@ open class CoordinationDatabaseModel {
     var id: Long = 0
     var lat: Double = 0.0
     var lng: Double = 0.0
-  //  var polylineModel :PolylineModel = PolylineModel("")
 }

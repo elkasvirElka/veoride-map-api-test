@@ -4,7 +4,7 @@ import android.os.Parcelable
 import kotlinx.android.parcel.Parcelize
 
 @Parcelize
-class BoundsModel (
-    val northeast:CoordinationModel,
-    val southwest:CoordinationModel
-):Parcelable
+data class BoundsModel(
+    val northeast: CoordinationModel,
+    val southwest: CoordinationModel
+) : Parcelable

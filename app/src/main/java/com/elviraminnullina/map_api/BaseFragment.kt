@@ -12,7 +12,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
 import com.elviraminnullina.map_api.navigation.NavigationEvent
-import com.elviraminnullina.nike_test_app.ui.common.CustomSpinnerFragment
+import com.elviraminnullina.map_api.ui.common.CustomSpinnerFragment
 
 abstract class BaseFragment : Fragment() {
     /**
@@ -47,7 +47,6 @@ abstract class BaseFragment : Fragment() {
     /**
      * Function to show spinner fragment
      */
-    @Synchronized
     fun showSpinner() {
         val spinnerFragment = findSpinnerFragment()
         if (spinnerFragment != null) return

@@ -13,10 +13,13 @@ import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.text.Spanned
 import android.view.View
 import android.widget.Button
 import android.widget.Chronometer
+import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.core.text.HtmlCompat
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
@@ -28,17 +31,16 @@ import com.elviraminnullina.map_api.data.model.StepModel
 import com.elviraminnullina.map_api.navigation.NavigationArguments
 import com.elviraminnullina.map_api.navigation.NavigationEvent
 import com.elviraminnullina.map_api.save_state_factory.InjectingSavedStateViewModelFactory
+import com.elviraminnullina.map_api.utils.DoubleUtils.Companion.round
 import com.elviraminnullina.map_api.utils.PermissionUtils
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.Polyline
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.maps.android.PolyUtil
 import java.util.*
 import javax.inject.Inject
-import kotlin.collections.ArrayList
 import kotlin.math.absoluteValue
 
 const val TRAVEL_TIME = "TRAVEL_TIME"
@@ -49,14 +51,11 @@ class MapFragment : BaseFragment(),
     @Inject
     lateinit var abstractFactory: InjectingSavedStateViewModelFactory
     lateinit var mViewModel: MapViewModel
-    lateinit var start: Button
-    lateinit var mChronometer: Chronometer
-    private var mMap: GoogleMap? = null
-    private var mCurrLocationMarker: Marker? = null
+    private lateinit var navigationPath: TextView
     private var destinationMarker: Marker? = null
-
-    //TODO move to VM
-    private var mLastLocation: Location = Location("")
+    private lateinit var start: Button
+    private lateinit var mChronometer: Chronometer
+    private var mMap: GoogleMap? = null
 
     override val layoutResourceId: Int = R.layout.fragment_map
 
@@ -76,49 +75,17 @@ class MapFragment : BaseFragment(),
         mapFragment?.getMapAsync(this)
 
         mChronometer = view.findViewById(R.id.chronometer)
+        navigationPath = view.findViewById(R.id.navigation_path)
         start = view.findViewById(R.id.start)
         start.setOnClickListener(onStartClickListener())
-        view.findViewById<Button>(R.id.stop).setOnClickListener(stopTraveling())
-
-
+        view.findViewById<Button>(R.id.stop).setOnClickListener(stopTravelingListener())
 
         if (mViewModel.travelProcess.value == true) {
             startChronometer()
+            startTravel()
         }
 
-        mViewModel.currentLocation.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                mViewModel.getDirection()
-            }
-        })
-        mViewModel.destinationLocation.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                mViewModel.getDirection()
-                val latLng = LatLng(it.lat, it.lng)
-                mViewModel.setDestinationMarkerOptions(latLng)
-            }
-        })
-        mViewModel.destinationMarkerOptions.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                destinationMarker = mMap?.addMarker(it)
-            }
-        })
-        mViewModel.response.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                //Draw all roads and give opportunely to choose
-                it.routes.firstOrNull()?.legs?.firstOrNull()?.let { leg ->
-                    displayDirection(leg.steps)
-                    start.visibility = View.VISIBLE
-                }
-            }
-        })
-        mViewModel.showSpinner.observe(viewLifecycleOwner, Observer {
-            if (it == true) {
-                showSpinner()
-            } else {
-                hideSpinner()
-            }
-        })
+        setViewModelObservers()
     }
 
     /**
@@ -139,7 +106,7 @@ class MapFragment : BaseFragment(),
         ) {
             return
         }
-        MapsInitializer.initialize(Objects.requireNonNull(context));
+        MapsInitializer.initialize(Objects.requireNonNull(context))
         googleMap.mapType = GoogleMap.MAP_TYPE_NORMAL
         googleMap.isMyLocationEnabled = true
         googleMap.uiSettings.isZoomControlsEnabled = true
@@ -177,18 +144,52 @@ class MapFragment : BaseFragment(),
             mViewModel.setChronoTime(mChronometer.base.absoluteValue)
     }
 
-    private fun displayDirection(directionsList: ArrayList<StepModel>) {
-        mViewModel.polylines.value?.apply {
-            removeAll(this)
-            clear()
-        }
-        /*    for (item in mViewModel.polylines.value?: emptyList<Polyline>()) {
-                item.remove()
+    private fun setViewModelObservers() {
+        mViewModel.currentLocation.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                mViewModel.getDirection()
             }
-            polylines.clear()*/
+        })
+
+        mViewModel.destinationLocation.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                mViewModel.getDirection()
+                val latLng = LatLng(it.latitude, it.longitude)
+                mViewModel.setDestinationMarkerOptions(latLng)
+            }
+        })
+        mViewModel.destinationMarkerOptions.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                destinationMarker = mMap?.addMarker(it)
+            }
+        })
+        mViewModel.response.observe(viewLifecycleOwner, Observer {
+            it?.let {
+                //Draw all roads and give opportunely to choose
+                it.routes.firstOrNull()?.legs?.firstOrNull()?.let { leg ->
+                    displayDirection(leg.steps)
+                    start.visibility = View.VISIBLE
+                }
+            }
+        })
+        mViewModel.showSpinner.observe(viewLifecycleOwner, Observer {
+            if (it == true) {
+                showSpinner()
+            } else {
+                hideSpinner()
+            }
+        })
+    }
+
+    private fun displayDirection(directionsList: ArrayList<StepModel>) {
+        updateNavPath(getCurrentPath())
+        (mViewModel.polylines.value?.size ?: 0 > 0).run {
+            mViewModel.polylines.value?.forEach { x -> x.remove() }
+            mViewModel.polylines.value?.clear()
+        }
 
         mMap?.apply {
-            directionsList.forEach { it ->
+            directionsList.forEach {
                 val options = PolylineOptions()
                 options.color(Color.BLUE)
                 options.width(10F)
@@ -211,15 +212,35 @@ class MapFragment : BaseFragment(),
         }
 
     private fun onStartClickListener() = View.OnClickListener {
+        (activity as? MainActivity)?.startService()
         startChronometer()
+        startTravel()
     }
 
-    private fun stopTraveling() = View.OnClickListener {
+    private fun getCurrentPath(): Spanned? {
+        mViewModel.response.value?.routes?.firstOrNull()?.legs?.firstOrNull()
+            ?.steps?.forEach { step ->
+            if (PolyUtil.decode(step.polyline.points).lastOrNull() == mViewModel.polylines.value?.firstOrNull()?.points?.lastOrNull())
+                return HtmlCompat.fromHtml(step.html_instructions, HtmlCompat.FROM_HTML_MODE_LEGACY)
+        }
+        return null
+    }
+
+    private fun updateNavPath(text: Spanned?) {
+        navigationPath.text = text
+    }
+
+    private fun stopTravelingListener() = View.OnClickListener {
+        stopTraveling()
+    }
+
+    private fun stopTraveling() {
         mViewModel.travelProcess.value = false
         mViewModel.setChronoTimeToNull()
         mChronometer.stop()
         mViewModel.setTravelTime(mChronometer.base)
         (activity as? MainActivity)?.stopService()
+
         val arg = NavigationArguments.create {
             putString(TRAVEL_TIME, getTimeFromChrono())
         }
@@ -250,54 +271,23 @@ class MapFragment : BaseFragment(),
         override fun onReceive(contxt: Context?, intent: Intent?) {
             if (mViewModel.travelProcess.value == false)
                 return
-            val b = intent?.getBundleExtra("Location");
+            val b = intent?.getBundleExtra("Location")
             val lastKnownLoc = b?.getParcelable("Location") as? Location
 
             lastKnownLoc?.let { lastLct ->
-                mViewModel.polylines.value?.firstOrNull()?.let { x ->
-                    var i = 0
-                    var itemFound = false
-                    x.points.forEach { coor ->
-                        //maybe here should be better to search for first 5 digits
-                        if (coor.latitude == lastLct.latitude && coor.longitude == lastLct.longitude) {
-                            itemFound = true
-                            return@forEach
-                        }
-                        i++
-                    }
-                    if(itemFound){
-                        //val newPoints = ArrayList<LatLng>(x.points.subList(i, x.points.size -1))
-                        //mViewModel.polylines.value?.removeAt(0)
-                        for(item in 0 until i)
-                                x.points.removeAt(item)
-
-                      /*  val option = PolylineOptions()
-                        option.addAll(newPoints)*/
-                      /*  mViewModel.polylines.value?.add(0, option.)*/
-                    }
+                if (round(mViewModel.destinationLocation.value?.latitude) == round(lastLct.latitude) && round(
+                        mViewModel.destinationLocation.value?.longitude
+                    ) == round(
+                        lastLct.longitude
+                    )
+                ) {
+                    stopTraveling()
+                } else {
+                    mViewModel.setCurrentLocation(lastLct)
                 }
             }
-            //(PolyUtil.decode(firstOrNull() ?: ""))
-            // }
-
-            // Get extra data included in the Intent
-            /*String message = intent.getStringExtra("Status");
-            Bundle b = intent.getBundleExtra("Location");
-            lastKnownLoc = (Location) b.getParcelable("Location");
-            if (lastKnownLoc != null) {
-                tvLatitude.setText(String.valueOf(lastKnownLoc.getLatitude()));
-                tvLongitude
-                        .setText(String.valueOf(lastKnownLoc.getLongitude()));
-                tvAccuracy.setText(String.valueOf(lastKnownLoc.getAccuracy()));
-                tvTimestamp.setText((new Date(lastKnownLoc.getTime())
-                        .toString()));
-                tvProvider.setText(lastKnownLoc.getProvider());
-            }
-            tvStatus.setText(message);*/
-            // Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
         }
     }
-
 
     private fun startTravel() {
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
@@ -305,12 +295,11 @@ class MapFragment : BaseFragment(),
         )
     }
 
-
     private fun getTimeFromChrono(): String {
-        val time = SystemClock.elapsedRealtime() - mChronometer.base;
+        val time = SystemClock.elapsedRealtime() - mChronometer.base
         val h = (time / 3600000).toInt()
-        val m = (time - h * 3600000).toInt() / 60000;
-        val s = (time - h * 3600000 - m * 60000).toInt() / 1000;
+        val m = (time - h * 3600000).toInt() / 60000
+        val s = (time - h * 3600000 - m * 60000).toInt() / 1000
         return addZeroIfLessThenTen(h).plus(":")
             .plus(addZeroIfLessThenTen(m)).plus(":")
             .plus(addZeroIfLessThenTen(s))

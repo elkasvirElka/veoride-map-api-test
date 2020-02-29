@@ -1,4 +1,4 @@
-package com.elviraminnullina.nike_test_app.ui.common
+package com.elviraminnullina.map_api.ui.common
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,10 +9,6 @@ import com.elviraminnullina.map_api.R
 
 
 class CustomSpinnerFragment : DialogFragment() {
-
-    /*override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-    }*/
 
     override fun onCreateView(
         inflater: LayoutInflater,

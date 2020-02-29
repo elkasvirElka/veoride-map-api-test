@@ -6,7 +6,6 @@ import androidx.room.Room
 import com.elviraminnullina.map_api.component.AppComponent
 import com.elviraminnullina.map_api.component.DaggerAppComponent
 import com.elviraminnullina.map_api.database.AppDatabase
-import okhttp3.internal.Internal.instance
 
 class MyApplication : Application() {
 
@@ -19,6 +18,7 @@ class MyApplication : Application() {
         fun getApp(context: Context?): MyApplication {
             return context?.applicationContext as MyApplication
         }
+
         fun getInstance() = instance
 
     }
@@ -36,6 +36,7 @@ class MyApplication : Application() {
         ).allowMainThreadQueries().build()
 
     }
+
     fun getDatabase(): AppDatabase? {
         return database
     }

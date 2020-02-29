@@ -27,7 +27,6 @@ class FrameworkModule {
         return retrofit.create(MapService::class.java)
     }
 
-
     private fun provideClient(): OkHttpClient {
         return OkHttpProvider.provideClient()
     }

@@ -1,7 +1,7 @@
 package com.elviraminnullina.map_api.data.repository
 
 import com.elviraminnullina.map_api.data.model.CoordinationModel
-import com.elviraminnullina.map_api.data.model.DirectionResponce
+import com.elviraminnullina.map_api.data.model.DirectionResponse
 import retrofit2.Response
 
 interface MapRepository {
@@ -9,5 +9,5 @@ interface MapRepository {
         start: CoordinationModel,
         finish: CoordinationModel,
         mode: String? = null
-    ): Response<DirectionResponce>
+    ): Response<DirectionResponse>
 }
