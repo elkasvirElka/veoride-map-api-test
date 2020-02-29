@@ -98,8 +98,13 @@ class MapViewModel @AssistedInject constructor(
     }
 
     //TODO check if not needed
-    @Volatile
+   // @Volatile
     var polylines = savedStateHandle.getLiveData<ArrayList<Polyline>>("polylines", ArrayList())
+
+    fun removePolylines(){
+        polylines.value?.forEach { x -> x.remove() }
+        polylines.value?.clear()
+    }
 
     fun getDirection(mode: String = "bicycling") {
         if (_currentLocation.value == null || _destinationLocation.value == null) {

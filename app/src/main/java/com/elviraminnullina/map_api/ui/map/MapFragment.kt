@@ -1,16 +1,13 @@
 package com.elviraminnullina.map_api.ui.map
 
-import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.location.Criteria
 import android.location.Location
 import android.location.LocationManager
-import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.text.Spanned
@@ -34,6 +31,7 @@ import com.elviraminnullina.map_api.data.model.StepModel
 import com.elviraminnullina.map_api.navigation.NavigationArguments
 import com.elviraminnullina.map_api.navigation.NavigationEvent
 import com.elviraminnullina.map_api.save_state_factory.InjectingSavedStateViewModelFactory
+import com.elviraminnullina.map_api.utils.ChronometerUtils.Companion.getTimeFromChrono
 import com.elviraminnullina.map_api.utils.DoubleUtils.Companion.round
 import com.elviraminnullina.map_api.utils.PermissionUtils
 import com.google.android.gms.maps.*
@@ -52,12 +50,34 @@ class MapFragment : BaseFragment(),
     OnMapReadyCallback {
     @Inject
     lateinit var abstractFactory: InjectingSavedStateViewModelFactory
-    lateinit var mViewModel: MapViewModel
+    private lateinit var mViewModel: MapViewModel
     private lateinit var navigationPath: TextView
     private var destinationMarker: Marker? = null
     private lateinit var start: Button
     private lateinit var mChronometer: Chronometer
     private var mMap: GoogleMap? = null
+
+    private val mMessageReceiver = object : BroadcastReceiver() {
+        override fun onReceive(contxt: Context?, intent: Intent?) {
+            if (mViewModel.travelProcess.value == false)
+                return
+            val b = intent?.getBundleExtra(LOCATION)
+            val lastKnownLoc = b?.getParcelable(LOCATION) as? Location
+
+            lastKnownLoc?.let { lastLct ->
+                if (round(mViewModel.destinationLocation.value?.latitude) == round(lastLct.latitude) && round(
+                        mViewModel.destinationLocation.value?.longitude
+                    ) == round(
+                        lastLct.longitude
+                    )
+                ) {
+                    stopTraveling()
+                } else {
+                    mViewModel.setCurrentLocation(lastLct)
+                }
+            }
+        }
+    }
 
     override val layoutResourceId: Int = R.layout.fragment_map
 
@@ -93,19 +113,13 @@ class MapFragment : BaseFragment(),
     /**
      * Manipulates the map once available.
      * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
+     * This is where we can add markers or lines, add listeners or move the camera.
      * If Google Play services is not installed on the device, the user will be prompted to install
      * it inside the SupportMapFragment. This method will only be triggered once the user has
      * installed Google Play services and returned to the app.
      */
     override fun onMapReady(googleMap: GoogleMap) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) !== PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!checkLocationPermission()) {
             return
         }
         MapsInitializer.initialize(Objects.requireNonNull(context))
@@ -113,17 +127,7 @@ class MapFragment : BaseFragment(),
         googleMap.isMyLocationEnabled = true
         googleMap.uiSettings.isZoomControlsEnabled = true
 
-        val locationManager =
-            ContextCompat.getSystemService<LocationManager>(
-                requireContext(),
-                LocationManager::class.java
-            )
-
-        val criteria = Criteria()
-        val location =
-            locationManager?.getLastKnownLocation(
-                locationManager.getBestProvider(criteria, false) ?: ""
-            )
+        val location = getLocation()
         location?.apply {
             mViewModel.setCurrentLocation(latitude, longitude)
             googleMap.animateCamera(
@@ -146,48 +150,66 @@ class MapFragment : BaseFragment(),
             mViewModel.setChronoTime(mChronometer.base.absoluteValue)
     }
 
-    private fun setViewModelObservers() {
-        mViewModel.currentLocation.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                mViewModel.getDirection()
-            }
-        })
+    private fun getLocation(): Location? {
+        val locationManager =
+            ContextCompat.getSystemService<LocationManager>(
+                requireContext(),
+                LocationManager::class.java
+            )
 
-        mViewModel.destinationLocation.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                mViewModel.getDirection()
-                val latLng = LatLng(it.latitude, it.longitude)
-                mViewModel.setDestinationMarkerOptions(latLng)
-            }
-        })
-        mViewModel.destinationMarkerOptions.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                destinationMarker = mMap?.addMarker(it)
-            }
-        })
-        mViewModel.response.observe(viewLifecycleOwner, Observer {
-            it?.let {
-                //Draw all roads and give opportunely to choose
-                it.routes.firstOrNull()?.legs?.firstOrNull()?.let { leg ->
-                    displayDirection(leg.steps)
-                    start.visibility = View.VISIBLE
+        val criteria = Criteria()
+        return if (checkLocationPermission()) {
+            locationManager?.getLastKnownLocation(
+                locationManager.getBestProvider(criteria, false) ?: ""
+            )
+        } else null
+    }
+
+    private fun setViewModelObservers() {
+        mViewModel.apply {
+            currentLocation.observe(viewLifecycleOwner, Observer {
+                it?.let {
+                    getDirection()
                 }
-            }
-        })
-        mViewModel.showSpinner.observe(viewLifecycleOwner, Observer {
-            if (it == true) {
-                showSpinner()
-            } else {
-                hideSpinner()
-            }
-        })
+            })
+
+            destinationLocation.observe(viewLifecycleOwner, Observer {
+                it?.let {
+                    getDirection()
+                    val latLng = LatLng(it.latitude, it.longitude)
+                    setDestinationMarkerOptions(latLng)
+                }
+            })
+            destinationMarkerOptions.observe(viewLifecycleOwner, Observer {
+                it?.let {
+                    destinationMarker = mMap?.addMarker(it)
+                }
+            })
+
+            response.observe(viewLifecycleOwner, Observer {
+                it?.let {
+                    //Draw all roads and give opportunely to choose, but for now we will do first road only
+                    it.routes.firstOrNull()?.legs?.firstOrNull()?.let { leg ->
+                        displayDirection(leg.steps)
+                        start.visibility = View.VISIBLE
+                    }
+                }
+            })
+
+            showSpinner.observe(viewLifecycleOwner, Observer {
+                if (it == true) {
+                    showSpinner()
+                } else {
+                    hideSpinner()
+                }
+            })
+        }
     }
 
     private fun displayDirection(directionsList: ArrayList<StepModel>) {
         updateNavPath(getCurrentPath())
         (mViewModel.polylines.value?.size ?: 0 > 0).run {
-            mViewModel.polylines.value?.forEach { x -> x.remove() }
-            mViewModel.polylines.value?.clear()
+            mViewModel.removePolylines()
         }
 
         mMap?.apply {
@@ -200,7 +222,6 @@ class MapFragment : BaseFragment(),
             }
         }
     }
-
 
     private fun checkLocationPermission(): Boolean =
         PermissionUtils.checkLocationPermission(requireActivity(), requireContext())
@@ -244,7 +265,7 @@ class MapFragment : BaseFragment(),
         (activity as? MainActivity)?.stopService()
 
         val arg = NavigationArguments.create {
-            putString(TRAVEL_TIME, getTimeFromChrono())
+            putString(TRAVEL_TIME, getTimeFromChrono(mChronometer))
         }
 
         getDialog(arg)
@@ -269,48 +290,9 @@ class MapFragment : BaseFragment(),
         mChronometer.start()
     }
 
-    private val mMessageReceiver = object : BroadcastReceiver() {
-        override fun onReceive(contxt: Context?, intent: Intent?) {
-            if (mViewModel.travelProcess.value == false)
-                return
-            val b = intent?.getBundleExtra(LOCATION)
-            val lastKnownLoc = b?.getParcelable(LOCATION) as? Location
-
-            lastKnownLoc?.let { lastLct ->
-                if (round(mViewModel.destinationLocation.value?.latitude) == round(lastLct.latitude) && round(
-                        mViewModel.destinationLocation.value?.longitude
-                    ) == round(
-                        lastLct.longitude
-                    )
-                ) {
-                    stopTraveling()
-                } else {
-                    mViewModel.setCurrentLocation(lastLct)
-                }
-            }
-        }
-    }
-
     private fun startTravel() {
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
             mMessageReceiver, IntentFilter(GPSLocationUpdates)
         )
-    }
-
-    private fun getTimeFromChrono(): String {
-        val time = SystemClock.elapsedRealtime() - mChronometer.base
-        val h = (time / 3600000).toInt()
-        val m = (time - h * 3600000).toInt() / 60000
-        val s = (time - h * 3600000 - m * 60000).toInt() / 1000
-        return addZeroIfLessThanTen(h).plus(":")
-            .plus(addZeroIfLessThanTen(m)).plus(":")
-            .plus(addZeroIfLessThanTen(s))
-    }
-
-    private fun addZeroIfLessThanTen(number: Int) =
-        (if (number < 10) "0$number" else number.toString())
-
-    companion object {
-        const val MY_PERMISSIONS_REQUEST_LOCATION = 99
     }
 }
