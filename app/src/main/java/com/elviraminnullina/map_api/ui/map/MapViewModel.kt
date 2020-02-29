@@ -54,6 +54,7 @@ class MapViewModel @AssistedInject constructor(
         setDestinationMarkerOptions(LatLng(latitude, longitude))
         getDirection()
     }
+
     private val _destinationLocation =
         savedStateHandle.getLiveData<CoordinationModel>("destination", null)
     val destinationLocation: LiveData<CoordinationModel> = _destinationLocation
@@ -63,27 +64,26 @@ class MapViewModel @AssistedInject constructor(
     val destinationMarkerOptions: LiveData<MarkerOptions> = _destinationMarkerOptions
 
     private fun setDestinationMarkerOptions(latLng: LatLng) {
-        _destinationMarkerOptions.value =  MarkerOptions().position(latLng).draggable(true)
+        _destinationMarkerOptions.value = MarkerOptions().position(latLng).draggable(true)
     }
 
-    var travelProcess =
-        savedStateHandle.get<Boolean>("travelProcess")
+    var travelProcess: Boolean?
+        get() = savedStateHandle.get<Boolean>("travelProcess")
+        set(value) {
+            savedStateHandle.set("travelProcess", value)
+        }
 
-    private val _chronoTime =
-        savedStateHandle.getLiveData<Long>("chronoTime", null)
-    val chronoTime: LiveData<Long> = _chronoTime
+    var chronoTime: Long?
+        get() = savedStateHandle.get<Long>("chronoTime")
+        set(time) {
+            savedStateHandle.set("chronoTime", time)
+        }
 
-    fun setChronoTimeToNull() {
-        _chronoTime.value = null
-    }
+    var polylines: ArrayList<Polyline>
+            get()= savedStateHandle.get<ArrayList<Polyline>>("polylines") ?: ArrayList()
+            set(value) = savedStateHandle.set("polylines", value)
 
-    fun setChronoTime(time: Long) {
-        _chronoTime.value = time
-    }
-
-    var polylines = savedStateHandle.get<ArrayList<Polyline>>("polylines")?:ArrayList()
-
-    fun removePolylines(){
+    fun removePolylines() {
         polylines.forEach { x -> x.remove() }
         polylines.clear()
     }

@@ -47,6 +47,9 @@ import kotlin.math.absoluteValue
 @Suppress("DEPRECATED_IDENTITY_EQUALS")
 class MapFragment : BaseFragment(),
     OnMapReadyCallback {
+
+    override val layoutResourceId: Int = R.layout.fragment_map
+
     @Inject
     lateinit var abstractFactory: InjectingSavedStateViewModelFactory
     private lateinit var mViewModel: MapViewModel
@@ -77,8 +80,6 @@ class MapFragment : BaseFragment(),
             }
         }
     }
-
-    override val layoutResourceId: Int = R.layout.fragment_map
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -145,7 +146,7 @@ class MapFragment : BaseFragment(),
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         if (::mViewModel.isInitialized && mViewModel.travelProcess == true)
-            mViewModel.setChronoTime(mChronometer.base.absoluteValue)
+            mViewModel.chronoTime = mChronometer.base.absoluteValue
     }
 
     private fun getLocation(): Location? {
@@ -244,7 +245,7 @@ class MapFragment : BaseFragment(),
 
     private fun stopTraveling() {
         mViewModel.travelProcess = false
-        mViewModel.setChronoTimeToNull()
+        mViewModel.chronoTime = null
         mChronometer.stop()
         (activity as? MainActivity)?.stopService()
 
@@ -269,7 +270,7 @@ class MapFragment : BaseFragment(),
 
     private fun startChronometer() {
         mViewModel.travelProcess = true
-        mChronometer.base = mViewModel.chronoTime.value ?: SystemClock.elapsedRealtime()
+        mChronometer.base = mViewModel.chronoTime ?: SystemClock.elapsedRealtime()
         mChronometer.start()
     }
 
