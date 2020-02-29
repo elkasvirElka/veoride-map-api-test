@@ -24,6 +24,9 @@ import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.elviraminnullina.map_api.BaseFragment
+import com.elviraminnullina.map_api.Constants.Companion.GPSLocationUpdates
+import com.elviraminnullina.map_api.Constants.Companion.LOCATION
+import com.elviraminnullina.map_api.Constants.Companion.TRAVEL_TIME
 import com.elviraminnullina.map_api.MainActivity
 import com.elviraminnullina.map_api.MyApplication
 import com.elviraminnullina.map_api.R
@@ -43,7 +46,6 @@ import java.util.*
 import javax.inject.Inject
 import kotlin.math.absoluteValue
 
-const val TRAVEL_TIME = "TRAVEL_TIME"
 
 @Suppress("DEPRECATED_IDENTITY_EQUALS")
 class MapFragment : BaseFragment(),
@@ -271,8 +273,8 @@ class MapFragment : BaseFragment(),
         override fun onReceive(contxt: Context?, intent: Intent?) {
             if (mViewModel.travelProcess.value == false)
                 return
-            val b = intent?.getBundleExtra("Location")
-            val lastKnownLoc = b?.getParcelable("Location") as? Location
+            val b = intent?.getBundleExtra(LOCATION)
+            val lastKnownLoc = b?.getParcelable(LOCATION) as? Location
 
             lastKnownLoc?.let { lastLct ->
                 if (round(mViewModel.destinationLocation.value?.latitude) == round(lastLct.latitude) && round(
@@ -291,7 +293,7 @@ class MapFragment : BaseFragment(),
 
     private fun startTravel() {
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
-            mMessageReceiver, IntentFilter("GPSLocationUpdates")
+            mMessageReceiver, IntentFilter(GPSLocationUpdates)
         )
     }
 
@@ -300,12 +302,12 @@ class MapFragment : BaseFragment(),
         val h = (time / 3600000).toInt()
         val m = (time - h * 3600000).toInt() / 60000
         val s = (time - h * 3600000 - m * 60000).toInt() / 1000
-        return addZeroIfLessThenTen(h).plus(":")
-            .plus(addZeroIfLessThenTen(m)).plus(":")
-            .plus(addZeroIfLessThenTen(s))
+        return addZeroIfLessThanTen(h).plus(":")
+            .plus(addZeroIfLessThanTen(m)).plus(":")
+            .plus(addZeroIfLessThanTen(s))
     }
 
-    private fun addZeroIfLessThenTen(number: Int) =
+    private fun addZeroIfLessThanTen(number: Int) =
         (if (number < 10) "0$number" else number.toString())
 
     companion object {

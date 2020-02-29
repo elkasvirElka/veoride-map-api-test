@@ -7,7 +7,10 @@ import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import com.elviraminnullina.map_api.Constants.Companion.GPSLocationUpdates
+import com.elviraminnullina.map_api.Constants.Companion.LOCATION
 import com.elviraminnullina.map_api.MyApplication
+import com.elviraminnullina.map_api.R
 import com.elviraminnullina.map_api.data.model.CoordinationDatabaseModel
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
@@ -38,7 +41,7 @@ class LocationService : Service(), ConnectionCallbacks,
     }
 
     private fun startTracking() {
-        Log.d(TAG, "startTracking")
+        Log.d(TAG, getString(R.string.start_tracking))
         googleApiClient = GoogleApiClient.Builder(this)
             .addApi(LocationServices.API)
             .addConnectionCallbacks(this)
@@ -64,7 +67,8 @@ class LocationService : Service(), ConnectionCallbacks,
     override fun onLocationChanged(location: Location) {
         Log.e(
             TAG,
-            "position: " + location.latitude + ", " + location.longitude + " accuracy: " + location.accuracy
+            getString(R.string.position) + location.latitude + ", " + location.longitude + getString(
+                            R.string.accuracy) + location.accuracy
         )
         // we have our desired accuracy of 10 meters so lets update database and client
         if (location.accuracy > 10.0f) {
@@ -86,11 +90,11 @@ class LocationService : Service(), ConnectionCallbacks,
     }
 
     private fun sendMessageToActivity(l: Location) {
-        val intent = Intent("GPSLocationUpdates")
+        val intent = Intent(GPSLocationUpdates)
         // You can also include some extra data.
         val b = Bundle()
-        b.putParcelable("Location", l)
-        intent.putExtra("Location", b)
+        b.putParcelable(LOCATION, l)
+        intent.putExtra(LOCATION, b)
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent)
     }
 
@@ -100,7 +104,7 @@ class LocationService : Service(), ConnectionCallbacks,
      * request the current location or start periodic updates
      */
     override fun onConnected(bundle: Bundle?) {
-        Log.d(TAG, "onConnected")
+        Log.d(TAG, getString(R.string.on_connect))
         locationRequest = LocationRequest.create()
         locationRequest?.apply {
             interval = 3000 // milliseconds 3sec
@@ -116,7 +120,7 @@ class LocationService : Service(), ConnectionCallbacks,
         } catch (se: SecurityException) {
             Log.e(
                 TAG,
-                "Go into settings and find Gps Tracker app and enable Location."
+                getString(R.string.go_into_settings)
             )
         }
     }
@@ -130,7 +134,7 @@ class LocationService : Service(), ConnectionCallbacks,
     override fun onConnectionSuspended(i: Int) {
         Log.e(
             TAG,
-            "GoogleApiClient connection has been suspended."
+            getString(R.string.connection_suspended)
         )
     }
 

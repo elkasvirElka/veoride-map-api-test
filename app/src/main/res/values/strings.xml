@@ -9,4 +9,11 @@
     <string name="traveling_time">traveling time</string>
     <string name="route_information">Route information</string>
     <string name="traveling_info">travel information</string>
+    <string name="connection_suspended">GoogleApiClient connection has been suspended.</string>
+    <string name="go_into_settings">Go into settings and find Gps Tracker app and enable Location.</string>
+    <string name="on_connect">onConnected</string>
+    <string name="position">\"position: \"</string>
+    <string name="accuracy">\" accuracy: \"</string>
+    <string name="start_tracking">startTracking</string>
+    <string name="database">database</string>
 </resources>

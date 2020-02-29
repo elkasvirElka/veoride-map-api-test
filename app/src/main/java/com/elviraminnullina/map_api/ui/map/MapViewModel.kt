@@ -3,6 +3,7 @@ package com.elviraminnullina.map_api.ui.map
 import android.location.Location
 import android.util.Log
 import androidx.lifecycle.*
+import com.elviraminnullina.map_api.Constants.Companion.ERROR
 import com.elviraminnullina.map_api.data.model.CoordinationModel
 import com.elviraminnullina.map_api.data.model.DirectionResponse
 import com.elviraminnullina.map_api.data.repository.MapRepository
@@ -114,7 +115,7 @@ class MapViewModel @AssistedInject constructor(
             if (response.isSuccessful) {
                 responseStateHandle.value = response.body()
             } else {
-                Log.d("ERROR", response.message())
+                Log.d(ERROR, response.message())
             }
             _showSpinner.value = false
         }

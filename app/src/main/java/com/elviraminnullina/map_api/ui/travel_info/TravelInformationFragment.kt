@@ -5,10 +5,10 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import com.elviraminnullina.map_api.BaseFragment
+import com.elviraminnullina.map_api.Constants.Companion.TRAVEL_TIME
 import com.elviraminnullina.map_api.MyApplication
 import com.elviraminnullina.map_api.R
 import com.elviraminnullina.map_api.data.model.CoordinationDatabaseModel
-import com.elviraminnullina.map_api.ui.map.TRAVEL_TIME
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.PolylineOptions

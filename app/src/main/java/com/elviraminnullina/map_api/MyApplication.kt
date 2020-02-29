@@ -32,7 +32,7 @@ class MyApplication : Application() {
         database = Room.databaseBuilder<AppDatabase>(
             this,
             AppDatabase::class.java,
-            "database"
+            getString(R.string.database)
         ).allowMainThreadQueries().build()
 
     }
