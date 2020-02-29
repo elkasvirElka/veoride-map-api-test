@@ -9,7 +9,6 @@ import com.elviraminnullina.map_api.data.model.DirectionResponse
 import com.elviraminnullina.map_api.data.repository.MapRepository
 import com.elviraminnullina.map_api.save_state_factory.AssistedSavedStateViewModelFactory
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.gms.maps.model.Polyline
 import com.squareup.inject.assisted.Assisted
@@ -39,15 +38,6 @@ class MapViewModel @AssistedInject constructor(
 
     private val _currentLocation =
         savedStateHandle.getLiveData<CoordinationModel>("current_location", null)
-    val currentLocation: LiveData<CoordinationModel> = _currentLocation
-
-    fun setCurrentLocation(location: Location) {
-        _currentLocation.value = CoordinationModel(location.latitude, location.longitude)
-    }
-
-    fun setCurrentLocation(latitude: Double, longitude: Double) {
-        _currentLocation.value = CoordinationModel(latitude, longitude)
-    }
 
     fun setCurrentLocationAndUpdateDirection(latitude: Double, longitude: Double) {
         _currentLocation.value = CoordinationModel(latitude, longitude)
@@ -68,25 +58,16 @@ class MapViewModel @AssistedInject constructor(
         savedStateHandle.getLiveData<CoordinationModel>("destination", null)
     val destinationLocation: LiveData<CoordinationModel> = _destinationLocation
 
-    fun setDestinationLocation(marker: Marker) {
-        _destinationLocation.value =
-            CoordinationModel(marker.position.latitude, marker.position.longitude)
-    }
-
-    fun setDestinationLocation(latitude: Double = 0.0, longitude: Double = 0.0) {
-        _destinationLocation.value = CoordinationModel(latitude, longitude)
-    }
-
     private val _destinationMarkerOptions =
         savedStateHandle.getLiveData<MarkerOptions>("markerOptions", null)
     val destinationMarkerOptions: LiveData<MarkerOptions> = _destinationMarkerOptions
 
-    fun setDestinationMarkerOptions(latLng: LatLng) {
-        _destinationMarkerOptions.value = getMarker(latLng)
+    private fun setDestinationMarkerOptions(latLng: LatLng) {
+        _destinationMarkerOptions.value =  MarkerOptions().position(latLng).draggable(true)
     }
 
-    val travelProcess =
-        savedStateHandle.getLiveData<Boolean>("chronoProgress", false)
+    var travelProcess =
+        savedStateHandle.get<Boolean>("travelProcess")
 
     private val _chronoTime =
         savedStateHandle.getLiveData<Long>("chronoTime", null)
@@ -121,7 +102,7 @@ class MapViewModel @AssistedInject constructor(
         polylines.value?.clear()
     }
 
-    fun getDirection(mode: String = "bicycling") {
+    private fun getDirection(mode: String = "bicycling") {
         if (_currentLocation.value == null || _destinationLocation.value == null) {
             return
         }
@@ -140,6 +121,4 @@ class MapViewModel @AssistedInject constructor(
             _showSpinner.value = false
         }
     }
-
-    private fun getMarker(latLng: LatLng) = MarkerOptions().position(latLng).draggable(true)
 }

@@ -58,7 +58,7 @@ class MapFragment : BaseFragment(),
 
     private val mMessageReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            if (mViewModel.travelProcess.value == false)
+            if (mViewModel.travelProcess == false)
                 return
             val b = intent?.getBundleExtra(LOCATION)
             val lastKnownLoc = b?.getParcelable(LOCATION) as? Location
@@ -101,9 +101,8 @@ class MapFragment : BaseFragment(),
         start.setOnClickListener(onStartClickListener())
         view.findViewById<Button>(R.id.stop).setOnClickListener(stopTravelingListener())
 
-        if (mViewModel.travelProcess.value == true) {
+        if (mViewModel.travelProcess == true) {
             startChronometer()
-            startTravel()
         }
 
         setViewModelObservers()
@@ -145,7 +144,7 @@ class MapFragment : BaseFragment(),
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        if (::mViewModel.isInitialized && mViewModel.travelProcess.value == true)
+        if (::mViewModel.isInitialized && mViewModel.travelProcess == true)
             mViewModel.setChronoTime(mChronometer.base.absoluteValue)
     }
 
@@ -244,7 +243,7 @@ class MapFragment : BaseFragment(),
     }
 
     private fun stopTraveling() {
-        mViewModel.travelProcess.value = false
+        mViewModel.travelProcess = false
         mViewModel.setChronoTimeToNull()
         mChronometer.stop()
         mViewModel.setTravelTime(mChronometer.base)
@@ -270,7 +269,7 @@ class MapFragment : BaseFragment(),
     }
 
     private fun startChronometer() {
-        mViewModel.travelProcess.value = true
+        mViewModel.travelProcess = true
         mViewModel.setTravelTimeToNull()
         mChronometer.base = mViewModel.chronoTime.value ?: SystemClock.elapsedRealtime()
         mChronometer.start()
