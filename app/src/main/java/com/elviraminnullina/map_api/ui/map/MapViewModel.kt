@@ -81,8 +81,6 @@ class MapViewModel @AssistedInject constructor(
         _chronoTime.value = time
     }
 
-    //TODO check if not needed
-   // @Volatile
     var polylines = savedStateHandle.get<ArrayList<Polyline>>("polylines")?:ArrayList()
 
     fun removePolylines(){
