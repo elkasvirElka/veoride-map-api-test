@@ -17,6 +17,7 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "API_BASE_URL", '"https://maps.googleapis.com/maps/api/directions/"'
         buildConfigField "String", "API_KEY", readApiKey()
+        resValue "string", "API_KEY", API_KEY
     }
 
     buildTypes {
