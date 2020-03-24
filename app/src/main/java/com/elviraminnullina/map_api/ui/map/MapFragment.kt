@@ -116,7 +116,11 @@ class MapFragment : BaseFragment(),
     override fun onStop() {
         super.onStop()
         //TODO check chronometer
-        activity?.unregisterReceiver(mMessageReceiver)
+        try {
+            activity?.unregisterReceiver(mMessageReceiver)
+        } catch (ex: IllegalArgumentException) {
+            //Ignore this exception
+        }
     }
 
     /**
