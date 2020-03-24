@@ -102,11 +102,21 @@ class MapFragment : BaseFragment(),
         start.setOnClickListener(onStartClickListener())
         view.findViewById<Button>(R.id.stop).setOnClickListener(stopTravelingListener())
 
+        setViewModelObservers()
+    }
+
+    override fun onResume() {
+        super.onResume()
         if (mViewModel.travelProcess == true) {
             startChronometer()
+            registerReceiver()
         }
+    }
 
-        setViewModelObservers()
+    override fun onStop() {
+        super.onStop()
+        //TODO check chronometer
+        activity?.unregisterReceiver(mMessageReceiver)
     }
 
     /**
@@ -221,9 +231,13 @@ class MapFragment : BaseFragment(),
         }
 
     private fun onStartClickListener() = View.OnClickListener {
+        if (mViewModel.travelProcess == true)
+            return@OnClickListener
+
         (activity as? MainActivity)?.startService()
+        mViewModel.travelProcess = true
         startChronometer()
-        startTravel()
+        registerReceiver()
     }
 
     private fun getCurrentPath(): Spanned? {
@@ -269,12 +283,11 @@ class MapFragment : BaseFragment(),
     }
 
     private fun startChronometer() {
-        mViewModel.travelProcess = true
         mChronometer.base = mViewModel.chronoTime ?: SystemClock.elapsedRealtime()
         mChronometer.start()
     }
 
-    private fun startTravel() {
+    private fun registerReceiver() {
         LocalBroadcastManager.getInstance(requireActivity()).registerReceiver(
             mMessageReceiver, IntentFilter(GPSLocationUpdates)
         )
